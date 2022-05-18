@@ -2,6 +2,7 @@ package com.javatechie.executor.api.service;
 
 import com.javatechie.executor.api.entity.User;
 import com.javatechie.executor.api.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,27 +18,25 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@Slf4j
 public class UserService {
 
     @Autowired
     private UserRepository repository;
 
-    Object target;
-    Logger logger = LoggerFactory.getLogger(UserService.class);
-
     @Async
-    public CompletableFuture<List<User>> saveUsers(MultipartFile file) throws Exception {
+    public void saveUsers(MultipartFile file) throws Exception {
         long start = System.currentTimeMillis();
         List<User> users = parseCSVFile(file);
-        logger.info("saving list of users of size {}", users.size(), "" + Thread.currentThread().getName());
-        users = repository.saveAll(users);
+        log.info("saving list of users of size {}, {}", users.size(), "" + Thread.currentThread().getName());
+        List<User> usersPersisted = repository.saveAll(users);
         long end = System.currentTimeMillis();
-        logger.info("Total time {}", (end - start));
-        return CompletableFuture.completedFuture(users);
+        log.info("records saved {}, Total time {}", usersPersisted.size(), (end - start));
     }
+
     @Async
     public CompletableFuture<List<User>> findAllUsers(){
-        logger.info("get list of user by "+Thread.currentThread().getName());
+        log.info("get list of user by "+Thread.currentThread().getName());
         List<User> users=repository.findAll();
         return CompletableFuture.completedFuture(users);
     }
@@ -58,8 +57,8 @@ public class UserService {
                 return users;
             }
         } catch (final IOException e) {
-            logger.error("Failed to parse CSV file {}", e);
-            throw new Exception("Failed to parse CSV file {}", e);
+            log.error("Failed to parse CSV file", e);
+            throw new Exception("Failed to parse CSV file ", e);
         }
     }
 }
